@@ -10,7 +10,8 @@ function handle(event, context, doneCallback) {
     });
 
     async.waterfall([
-        continuation => dbServices.getCredentials(continuation)
+        continuation => dbServices.getCredentials(continuation),
+        (saintsStatsDbConfig, continuation) => dbServices.connectToDatabase(saintsStatsDbConfig, continuation)
     ], doneCallback)
 }
 

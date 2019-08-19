@@ -37,7 +37,8 @@ function awsMocks() {
     return {
         awsSdkMock,
         getParameterDbConfig,
-        awsSdkSsmGetParameterSpy
+        awsSdkSsmGetParameterSpy,
+        saintsStatsDbConfigMock
     }
 }
 

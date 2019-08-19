@@ -3,10 +3,13 @@ const assert = require('assert');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const awsMocksConstructor = require('./mocks/awsMocks');
+const dbMocksConstructor = require('./mocks/dbMocks');
 
 describe('getStatsCategories Test', () => {
     let getStatsCategoriesLambda;
+    let getStatsCategoriesLambdaCallback;
     let awsMocks;
+    let dbMocks;
 
     beforeEach(() => {
         mockery.enable({
@@ -15,9 +18,13 @@ describe('getStatsCategories Test', () => {
             warnOnUnregistered: false
         });
 
+        getStatsCategoriesLambdaCallback = sinon.spy();
+
         awsMocks = awsMocksConstructor();
+        dbMocks = dbMocksConstructor();
 
         mockery.registerMock('aws-sdk', awsMocks.awsSdkMock);
+        mockery.registerMock('mysql', dbMocks.mySqlMock);
         getStatsCategoriesLambda = require(`${basedir}/index`).handle;
     });
 
@@ -27,12 +34,6 @@ describe('getStatsCategories Test', () => {
     })
 
     describe('getCredentials', () => {
-        let getStatsCategoriesLambdaCallback;
-
-        beforeEach(() => {
-            getStatsCategoriesLambdaCallback = sinon.spy();
-        });
-
         it('should update the region for aws', () => {
             getStatsCategoriesLambda({}, {}, getStatsCategoriesLambdaCallback);
 
@@ -58,7 +59,7 @@ describe('getStatsCategories Test', () => {
             assert.equal(JSON.stringify(awsMocks.awsSdkSsmGetParameterSpy.args[0][0]), JSON.stringify(expectedParams));
         });
         
-        it('should return the database credentials returned from SSM', () => {
+        it.skip('should return the database credentials returned from SSM', () => {
             getStatsCategoriesLambda({}, {}, getStatsCategoriesLambdaCallback);
 
             assert.equal(getStatsCategoriesLambdaCallback.callCount, 0);
@@ -83,6 +84,39 @@ describe('getStatsCategories Test', () => {
             assert.equal(getStatsCategoriesLambdaCallback.callCount, 1);
             assert.equal(getStatsCategoriesLambdaCallback.args[0][0], getParameterError);
             assert.equal(getStatsCategoriesLambdaCallback.args[0][1], undefined);
+        });
+    });
+
+    describe('connectToDatabase', () => {
+        function callbackFromGetCredentials() {
+            const getParameterCallback = awsMocks.awsSdkSsmGetParameterSpy.args[0][1];
+            getParameterCallback(null, awsMocks.getParameterDbConfig);
+        }
+
+        it('should create a connection to the database', () => {
+            const expectedDatabaseConnectionData = {
+                host: awsMocks.saintsStatsDbConfigMock.endpoints.angularSaintsStatsDb,
+                user: awsMocks.saintsStatsDbConfigMock.credentials.rdsSaintsStatsData.username,
+                password: awsMocks.saintsStatsDbConfigMock.credentials.rdsSaintsStatsData.password,
+                database: awsMocks.saintsStatsDbConfigMock.credentials.rdsSaintsStatsData.database
+            };
+
+            getStatsCategoriesLambda({}, {}, getStatsCategoriesLambdaCallback);
+
+            callbackFromGetCredentials();
+
+            assert.equal(dbMocks.mySqlMock.createConnection.callCount, 1);
+            assert.equal(JSON.stringify(dbMocks.mySqlMock.createConnection.args[0][0]), JSON.stringify(expectedDatabaseConnectionData));
+        });
+
+        it('should return the connection', () => {
+            getStatsCategoriesLambda({}, {}, getStatsCategoriesLambdaCallback);
+
+            callbackFromGetCredentials();
+
+            assert.equal(getStatsCategoriesLambdaCallback.callCount, 1);
+            assert.equal(getStatsCategoriesLambdaCallback.args[0][0], null);
+            assert.equal(getStatsCategoriesLambdaCallback.args[0][1], dbMocks.dbConnectionMock);
         });
     });
 });
