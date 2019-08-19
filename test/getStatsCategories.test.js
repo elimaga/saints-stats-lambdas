@@ -5,7 +5,7 @@ const sinon = require('sinon');
 const awsMocksConstructor = require('./mocks/awsMocks');
 const dbMocksConstructor = require('./mocks/dbMocks');
 
-describe('getStatsCategories Test', () => {
+describe('getStatsCategories Lambda Test', () => {
     let getStatsCategoriesLambda;
     let getStatsCategoriesLambdaCallback;
     let awsMocks;
@@ -31,7 +31,12 @@ describe('getStatsCategories Test', () => {
     afterEach(() => {
         mockery.deregisterAll();
         mockery.disable();
-    })
+    });
+
+    function callbackFromGetCredentials() {
+        const getParameterCallback = awsMocks.awsSdkSsmGetParameterSpy.args[0][1];
+        getParameterCallback(null, awsMocks.getParameterDbConfig);
+    }
 
     describe('getCredentials', () => {
         it('should update the region for aws', () => {
@@ -88,11 +93,6 @@ describe('getStatsCategories Test', () => {
     });
 
     describe('connectToDatabase', () => {
-        function callbackFromGetCredentials() {
-            const getParameterCallback = awsMocks.awsSdkSsmGetParameterSpy.args[0][1];
-            getParameterCallback(null, awsMocks.getParameterDbConfig);
-        }
-
         it('should create a connection to the database', () => {
             const expectedDatabaseConnectionData = {
                 host: awsMocks.saintsStatsDbConfigMock.endpoints.angularSaintsStatsDb,
@@ -108,15 +108,55 @@ describe('getStatsCategories Test', () => {
             assert.equal(dbMocks.mySqlMock.createConnection.callCount, 1);
             assert.equal(JSON.stringify(dbMocks.mySqlMock.createConnection.args[0][0]), JSON.stringify(expectedDatabaseConnectionData));
         });
+    });
 
-        it('should return the connection', () => {
+    describe('getStatsCategories', () => {
+        it('should query the database for the stats categories', () => {
             getStatsCategoriesLambda({}, {}, getStatsCategoriesLambdaCallback);
 
             callbackFromGetCredentials();
 
+            const expectedDbQueryString = 'SELECT * FROM StatsCategories ' +
+                                          'ORDER BY Id ASC';
+            const expectedDbArgs = [];
+            assert.equal(dbMocks.dbConnectionMock.query.callCount, 1);
+            assert.equal(dbMocks.dbConnectionMock.query.args[0][0], expectedDbQueryString);
+            assert.equal(JSON.stringify(dbMocks.dbConnectionMock.query.args[0][1]), JSON.stringify(expectedDbArgs));
+        });
+
+        it('should return the stats categories', () => {
+            getStatsCategoriesLambda({}, {}, getStatsCategoriesLambdaCallback);
+
+            callbackFromGetCredentials();
+
+            assert.equal(getStatsCategoriesLambdaCallback.callCount, 0);
+
+            const statsCategoriesFake = [
+                {Id: 1, Abbreviation: 'FC', CategoryName: 'Fake Category'},
+                {Id: 2, Abbreviation: 'CF', CategoryName: 'Category that is Fake'}
+            ];
+            const getStatsCategoriesFromDbCallback = dbMocks.dbConnectionMock.query.args[0][2];
+            getStatsCategoriesFromDbCallback(null, statsCategoriesFake);
+
             assert.equal(getStatsCategoriesLambdaCallback.callCount, 1);
             assert.equal(getStatsCategoriesLambdaCallback.args[0][0], null);
-            assert.equal(getStatsCategoriesLambdaCallback.args[0][1], dbMocks.dbConnectionMock);
+            assert.equal(getStatsCategoriesLambdaCallback.args[0][1], statsCategoriesFake);
+        });
+
+        it('should return an error if the database query fails', () => {
+            getStatsCategoriesLambda({}, {}, getStatsCategoriesLambdaCallback);
+
+            callbackFromGetCredentials();
+
+            assert.equal(getStatsCategoriesLambdaCallback.callCount, 0);
+
+            const dbQueryError = 'this is an error querying the database';
+            const getStatsCategoriesFromDbCallback = dbMocks.dbConnectionMock.query.args[0][2];
+            getStatsCategoriesFromDbCallback(dbQueryError);
+
+            assert.equal(getStatsCategoriesLambdaCallback.callCount, 1);
+            assert.equal(getStatsCategoriesLambdaCallback.args[0][0], dbQueryError);
+            assert.equal(getStatsCategoriesLambdaCallback.args[0][1], undefined);
         });
     });
 });
