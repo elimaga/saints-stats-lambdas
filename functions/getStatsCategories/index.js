@@ -11,8 +11,7 @@ function handler(event, context, doneCallback) {
     });
 
     async.waterfall([
-        continuation => dbServices.getCredentials(continuation),
-        (saintsStatsDbConfig, continuation) => dbServices.connectToDatabase(saintsStatsDbConfig, continuation),
+        continuation => dbServices.connectToDatabase(continuation),
         continuation => statsCategoriesDataService.getStatsCategories(continuation),
     ], (err, statsCategories) => {
         dbServices.disconnectDb();

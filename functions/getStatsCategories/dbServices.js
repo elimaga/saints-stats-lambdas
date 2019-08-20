@@ -1,31 +1,9 @@
-const awsSdk = require('aws-sdk');
 const mysql = require('mysql');
+const saintsStatsDbConfig = require('./saintsStatsDbConfig');
 
 let dbConnection;
 
-function getCredentials(callback) {
-    awsSdk.config.update({ region: 'us-west-1' });
-
-    const ssm = new awsSdk.SSM();
-
-    const params = {
-        Name: 'saintsStatsDbConfig',
-        WithDecryption: true
-    };
-
-    ssm.getParameter(params, (err, data) => {
-        if (err) {
-            callback(err);
-            return;
-        }
-
-        const saintsStatsDbConfig = JSON.parse(data.Parameter.Value);
-
-        callback(null, saintsStatsDbConfig);
-    });
-}
-
-function connectToDatabase(saintsStatsDbConfig, callback) {
+function connectToDatabase(callback) {
     dbConnection = mysql.createConnection({
         host: saintsStatsDbConfig.endpoints.angularSaintsStatsDb,
         user: saintsStatsDbConfig.credentials.rdsSaintsStatsData.username,
@@ -47,7 +25,6 @@ function disconnectDb() {
 }
 
 module.exports = {
-    getCredentials,
     connectToDatabase,
     query,
     disconnectDb
