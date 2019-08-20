@@ -25,7 +25,7 @@ describe('getStatsCategories Lambda Test', () => {
 
         mockery.registerMock('aws-sdk', awsMocks.awsSdkMock);
         mockery.registerMock('mysql', dbMocks.mySqlMock);
-        getStatsCategoriesLambda = require(`${basedir}/index`).handle;
+        getStatsCategoriesLambda = require(`${basedir}/index`).handler;
     });
 
     afterEach(() => {

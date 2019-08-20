@@ -2,7 +2,7 @@ const async = require('async');
 const dbServices = require('./dbServices');
 const statsCategoriesDataService = require('./statsCategoriesDataService');
 
-function handle(event, context, doneCallback) {
+function handler(event, context, doneCallback) {
     console.log('Start process\n', JSON.stringify(event));
 
     process.on('uncaughtException', (err) => {
@@ -21,5 +21,5 @@ function handle(event, context, doneCallback) {
 }
 
 module.exports = {
-    handle
+    handler
 };
