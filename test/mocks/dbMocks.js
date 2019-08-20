@@ -6,7 +6,8 @@ function dbMocks() {
     };
     
     const dbConnectionMock = {
-        query: sinon.spy()
+        query: sinon.spy(),
+        end: sinon.spy()
     };
 
     const mySqlMock = {

@@ -89,6 +89,7 @@ describe('getStatsCategories Lambda Test', () => {
             assert.equal(getStatsCategoriesLambdaCallback.callCount, 1);
             assert.equal(getStatsCategoriesLambdaCallback.args[0][0], getParameterError);
             assert.equal(getStatsCategoriesLambdaCallback.args[0][1], undefined);
+            assert.equal(dbMocks.dbConnectionMock.end.callCount, 0);
         });
     });
 
@@ -141,6 +142,7 @@ describe('getStatsCategories Lambda Test', () => {
             assert.equal(getStatsCategoriesLambdaCallback.callCount, 1);
             assert.equal(getStatsCategoriesLambdaCallback.args[0][0], null);
             assert.equal(getStatsCategoriesLambdaCallback.args[0][1], statsCategoriesFake);
+            assert.equal(dbMocks.dbConnectionMock.end.callCount, 1);
         });
 
         it('should return an error if the database query fails', () => {
@@ -157,6 +159,7 @@ describe('getStatsCategories Lambda Test', () => {
             assert.equal(getStatsCategoriesLambdaCallback.callCount, 1);
             assert.equal(getStatsCategoriesLambdaCallback.args[0][0], dbQueryError);
             assert.equal(getStatsCategoriesLambdaCallback.args[0][1], undefined);
+            assert.equal(dbMocks.dbConnectionMock.end.callCount, 1);
         });
     });
 });

@@ -40,8 +40,15 @@ function query(queryString, args, callback) {
     dbConnection.query(queryString, args, callback);
 }
 
+function disconnectDb() {
+    if (dbConnection) {
+        dbConnection.end();
+    }
+}
+
 module.exports = {
     getCredentials,
     connectToDatabase,
-    query
+    query,
+    disconnectDb
 };
