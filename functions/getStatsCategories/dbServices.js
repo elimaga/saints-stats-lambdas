@@ -1,5 +1,5 @@
 const mysql = require('mysql');
-const saintsStatsDbConfig = require('./saintsStatsDbConfig');
+const saintsStatsDbConfig = require('./saintsStatsDbConfig.json');
 
 let dbConnection;
 
@@ -11,7 +11,15 @@ function connectToDatabase(callback) {
         database: saintsStatsDbConfig.credentials.rdsSaintsStatsData.database
     });
 
-    callback();
+    dbConnection.connect((err) => {
+        if (err) {
+            console.log('There was an error connecting to the database', err);
+        } else {
+            console.log('Connected to the database');
+        }
+
+        callback(err);
+    });
 }
 
 function query(queryString, args, callback) {
