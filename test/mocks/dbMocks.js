@@ -1,17 +1,8 @@
 const sinon = require('sinon');
 
 function dbMocks() {
-    const saintsStatsDbConfigMock = {
-        endpoints: {
-            angularSaintsStatsDb: 'databaseEndpoint'
-        },
-        credentials: {
-            rdsSaintsStatsData: {
-                username: 'username',
-                password: 'password',
-                database: 'database'
-            }
-        }
+    const databaseCredentialData = {
+        apiEndpoint: 'apiEndpoint'
     };
     
     const dbConnectionMock = {
@@ -26,7 +17,7 @@ function dbMocks() {
     };
     
     return {
-        saintsStatsDbConfigMock,
+        databaseCredentialData,
         dbConnectionMock,
         mySqlMock
     }
