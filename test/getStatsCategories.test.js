@@ -20,7 +20,7 @@ describe('getStatsCategories Lambda Test', () => {
 
         dbMocks = dbMocksConstructor();
 
-        mockery.registerMock('./saintsStatsDbConfig.json', dbMocks.saintsStatsDbConfigMock);
+        mockery.registerMock('./saintsStatsDbConfig', dbMocks.saintsStatsDbConfigMock);
         mockery.registerMock('mysql', dbMocks.mySqlMock);
         getStatsCategoriesLambda = require(`${basedir}/index`).handler;
     });
