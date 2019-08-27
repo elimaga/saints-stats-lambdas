@@ -11,15 +11,7 @@ function connectToDatabase(callback) {
         database: saintsStatsDbConfig.credentials.rdsSaintsStatsData.database
     });
 
-    dbConnection.connect((err) => {
-        if (err) {
-            console.log('There was an error connecting to the database', err);
-        } else {
-            console.log('Connected to the database');
-        }
-
-        callback(err);
-    });
+    callback();
 }
 
 function query(queryString, args, callback) {
