@@ -3,3 +3,4 @@ package-lock.json
 node_modules
 *.zip
 functions/getStatsCategories/saintsStatsDbConfig.json
+functions/getStatistics/saintsStatsDbConfig.json
