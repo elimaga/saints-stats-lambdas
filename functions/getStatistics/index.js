@@ -1,4 +1,6 @@
 const async = require('async');
+const dbServices = require('./dbServices');
+const statisticsDataService = require('./statisticsDataService');
 
 function handler(event, context, doneCallback) {
     console.log('Start process\n', JSON.stringify(event));
@@ -9,9 +11,11 @@ function handler(event, context, doneCallback) {
     });
 
     async.waterfall([
-
-    ], (err, statsCategories) => {
-        doneCallback(err, statsCategories);
+        continuation => dbServices.connectToDatabase(continuation),
+        continuation => statisticsDataService.getStatistics(continuation)
+    ], (err, statistics) => {
+        dbServices.disconnectDb();
+        doneCallback(err, statistics);
     })
 }
 

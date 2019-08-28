@@ -5,13 +5,7 @@ function getStatsCategories(callback) {
                                     'ORDER BY Id ASC';
     const getStatsCategoriesArgs = [];
 
-    dbServices.query(getStatsCategoriesQuery,getStatsCategoriesArgs, function (err, data) {
-        if (err) {
-            console.log('There was an error querying the database', err);
-        }
-
-        callback(err, data);
-    });
+    dbServices.query(getStatsCategoriesQuery, getStatsCategoriesArgs, callback);
 }
 
 module.exports = {

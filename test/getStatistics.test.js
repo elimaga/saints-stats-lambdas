@@ -20,8 +20,8 @@ describe('getStatistics Lambda Test', () => {
 
         dbMocks = dbMocksConstructor();
 
-        // mockery.registerMock('./saintsStatsDbConfig.json', dbMocks.saintsStatsDbConfigMock);
-        // mockery.registerMock('mysql', dbMocks.mySqlMock);
+        mockery.registerMock('./saintsStatsDbConfig.json', dbMocks.saintsStatsDbConfigMock);
+        mockery.registerMock('mysql', dbMocks.mySqlMock);
         getStatisticsLambda = require(`${basedir}/index`).handler;
     });
 
@@ -29,7 +29,6 @@ describe('getStatistics Lambda Test', () => {
         mockery.deregisterAll();
         mockery.disable();
     });
-
 
     describe('connectToDatabase', () => {
         it('should create a connection to the database', () => {
@@ -47,12 +46,16 @@ describe('getStatistics Lambda Test', () => {
         });
     });
 
-    describe.skip('getStatistics', () => {
-        it('should query the database for the stats categories', () => {
+    describe('getStatistics', () => {
+        it('should query the database for the statistics', () => {
             getStatisticsLambda({}, {}, getStatisticsLambdaCallback);
 
-            const expectedDbQueryString = 'SELECT * FROM StatsCategories ' +
-                                          'ORDER BY Id ASC';
+            const expectedDbQueryString = 'SELECT P.Number, P.Name, SC.Abbreviation, SC.CategoryName, S.Value ' +
+                                          'FROM Statistics S ' +
+                                          'INNER JOIN Players P on S.PlayerId = P.Id ' +
+                                          'INNER JOIN StatsCategories SC on S.CategoryId = SC.Id ' +
+                                          'ORDER BY P.Number, SC.Id';
+
             const expectedDbArgs = [];
             assert.equal(dbMocks.dbConnectionMock.query.callCount, 1);
             assert.equal(dbMocks.dbConnectionMock.query.args[0][0], expectedDbQueryString);
@@ -64,16 +67,18 @@ describe('getStatistics Lambda Test', () => {
 
             assert.equal(getStatisticsLambdaCallback.callCount, 0);
 
-            const statsCategoriesFake = [
-                {Id: 1, Abbreviation: 'FC', CategoryName: 'Fake Category'},
-                {Id: 2, Abbreviation: 'CF', CategoryName: 'Category that is Fake'}
+            const statisticsFake = [
+                {Number: 1, Name: 'Player1', Abbreviation: 'FC', CategoryName: 'Fake Category', Value: 8},
+                {Number: 1, Name: 'Player1', Abbreviation: 'CF', CategoryName: 'Category that is Fake', Value: 6},
+                {Number: 2, Name: 'Player2', Abbreviation: 'FC', CategoryName: 'Fake Category', Value: 5},
+                {Number: 2, Name: 'Player2', Abbreviation: 'CF', CategoryName: 'Category that is Fake', Value: 10}
             ];
-            const getStatsCategoriesFromDbCallback = dbMocks.dbConnectionMock.query.args[0][2];
-            getStatsCategoriesFromDbCallback(null, statsCategoriesFake);
+            const getStatisticsFromDbCallback = dbMocks.dbConnectionMock.query.args[0][2];
+            getStatisticsFromDbCallback(null, statisticsFake);
 
             assert.equal(getStatisticsLambdaCallback.callCount, 1);
             assert.equal(getStatisticsLambdaCallback.args[0][0], null);
-            assert.equal(getStatisticsLambdaCallback.args[0][1], statsCategoriesFake);
+            assert.equal(getStatisticsLambdaCallback.args[0][1], statisticsFake);
             assert.equal(dbMocks.dbConnectionMock.end.callCount, 1);
         });
 
@@ -83,8 +88,8 @@ describe('getStatistics Lambda Test', () => {
             assert.equal(getStatisticsLambdaCallback.callCount, 0);
 
             const dbQueryError = 'this is an error querying the database';
-            const getStatsCategoriesFromDbCallback = dbMocks.dbConnectionMock.query.args[0][2];
-            getStatsCategoriesFromDbCallback(dbQueryError);
+            const getStatisticsFromDbCallback = dbMocks.dbConnectionMock.query.args[0][2];
+            getStatisticsFromDbCallback(dbQueryError);
 
             assert.equal(getStatisticsLambdaCallback.callCount, 1);
             assert.equal(getStatisticsLambdaCallback.args[0][0], dbQueryError);

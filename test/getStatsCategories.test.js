@@ -30,7 +30,6 @@ describe('getStatsCategories Lambda Test', () => {
         mockery.disable();
     });
 
-
     describe('connectToDatabase', () => {
         it('should create a connection to the database', () => {
             const expectedDatabaseConnectionData = {
