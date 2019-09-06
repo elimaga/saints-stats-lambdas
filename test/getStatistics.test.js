@@ -7,7 +7,7 @@ const dbMocksConstructor = require('./mocks/dbMocks');
 describe('getStatistics Lambda Test', () => {
     let getStatisticsLambda;
     let getStatisticsLambdaCallback;
-    let dbMocks;
+    let databaseServiceLayerMock;
 
     beforeEach(() => {
         mockery.enable({
@@ -18,10 +18,15 @@ describe('getStatistics Lambda Test', () => {
 
         getStatisticsLambdaCallback = sinon.spy();
 
-        dbMocks = dbMocksConstructor();
+        databaseServiceLayerMock = {
+            connectToDatabase: sinon.spy(function (callback) {
+                callback()
+            }),
+            query: sinon.spy(),
+            disconnectDb: sinon.spy()
+        };
 
-        mockery.registerMock('./saintsStatsDbConfig.json', dbMocks.saintsStatsDbConfigMock);
-        mockery.registerMock('mysql', dbMocks.mySqlMock);
+        mockery.registerMock('/opt/databaseServiceLayer/index', databaseServiceLayerMock);
         getStatisticsLambda = require(`${basedir}/index`).handler;
     });
 
@@ -32,17 +37,9 @@ describe('getStatistics Lambda Test', () => {
 
     describe('connectToDatabase', () => {
         it('should create a connection to the database', () => {
-            const expectedDatabaseConnectionData = {
-                host: dbMocks.saintsStatsDbConfigMock.endpoints.angularSaintsStatsDb,
-                user: dbMocks.saintsStatsDbConfigMock.credentials.rdsSaintsStatsData.username,
-                password: dbMocks.saintsStatsDbConfigMock.credentials.rdsSaintsStatsData.password,
-                database: dbMocks.saintsStatsDbConfigMock.credentials.rdsSaintsStatsData.database
-            };
-
             getStatisticsLambda({}, {}, getStatisticsLambdaCallback);
 
-            assert.equal(dbMocks.mySqlMock.createConnection.callCount, 1);
-            assert.equal(JSON.stringify(dbMocks.mySqlMock.createConnection.args[0][0]), JSON.stringify(expectedDatabaseConnectionData));
+            assert.equal(databaseServiceLayerMock.connectToDatabase.callCount, 1);
         });
     });
 
@@ -57,9 +54,9 @@ describe('getStatistics Lambda Test', () => {
                 'ORDER BY P.Number, SC.Id';
 
             const expectedDbArgs = [];
-            assert.equal(dbMocks.dbConnectionMock.query.callCount, 1);
-            assert.equal(dbMocks.dbConnectionMock.query.args[0][0], expectedDbQueryString);
-            assert.equal(JSON.stringify(dbMocks.dbConnectionMock.query.args[0][1]), JSON.stringify(expectedDbArgs));
+            assert.equal(databaseServiceLayerMock.query.callCount, 1);
+            assert.equal(databaseServiceLayerMock.query.args[0][0], expectedDbQueryString);
+            assert.equal(JSON.stringify(databaseServiceLayerMock.query.args[0][1]), JSON.stringify(expectedDbArgs));
         });
 
         it('should return the stats categories as an array of stats for each player', () => {
@@ -73,7 +70,7 @@ describe('getStatistics Lambda Test', () => {
                 {Number: 2, Name: 'Player2', Abbreviation: 'FC', Value: 5},
                 {Number: 2, Name: 'Player2', Abbreviation: 'CF', Value: 10}
             ];
-            const getStatisticsFromDbCallback = dbMocks.dbConnectionMock.query.args[0][2];
+            const getStatisticsFromDbCallback = databaseServiceLayerMock.query.args[0][2];
             getStatisticsFromDbCallback(null, statisticsFake);
 
             const expectedFormattedStats = [
@@ -94,7 +91,7 @@ describe('getStatistics Lambda Test', () => {
             assert.equal(getStatisticsLambdaCallback.callCount, 1);
             assert.equal(getStatisticsLambdaCallback.args[0][0], null);
             assert.equal(JSON.stringify(getStatisticsLambdaCallback.args[0][1]), JSON.stringify(expectedFormattedStats));
-            assert.equal(dbMocks.dbConnectionMock.end.callCount, 1);
+            assert.equal(databaseServiceLayerMock.disconnectDb.callCount, 1);
         });
 
         it('should return an error if the database query fails', () => {
@@ -103,13 +100,13 @@ describe('getStatistics Lambda Test', () => {
             assert.equal(getStatisticsLambdaCallback.callCount, 0);
 
             const dbQueryError = 'this is an error querying the database';
-            const getStatisticsFromDbCallback = dbMocks.dbConnectionMock.query.args[0][2];
+            const getStatisticsFromDbCallback = databaseServiceLayerMock.query.args[0][2];
             getStatisticsFromDbCallback(dbQueryError);
 
             assert.equal(getStatisticsLambdaCallback.callCount, 1);
             assert.equal(getStatisticsLambdaCallback.args[0][0], dbQueryError);
             assert.equal(getStatisticsLambdaCallback.args[0][1], undefined);
-            assert.equal(dbMocks.dbConnectionMock.end.callCount, 1);
+            assert.equal(databaseServiceLayerMock.disconnectDb.callCount, 1);
         });
     });
 });

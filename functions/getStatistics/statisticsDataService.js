@@ -1,4 +1,4 @@
-const dbServices = require('./dbServices');
+const databaseServiceLayer = require('/opt/databaseServiceLayer/index');
 
 function getStatistics(callback) {
     const getStatisticsQuery = 'SELECT P.Number, P.Name, SC.Abbreviation, S.Value ' +
@@ -8,7 +8,7 @@ function getStatistics(callback) {
                                'ORDER BY P.Number, SC.Id';
     const getStatisticsArgs = [];
 
-    dbServices.query(getStatisticsQuery, getStatisticsArgs, function (err, statistics) {
+    databaseServiceLayer.query(getStatisticsQuery, getStatisticsArgs, function (err, statistics) {
         if (err) {
             callback(err);
             return;

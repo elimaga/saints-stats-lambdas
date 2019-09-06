@@ -1,5 +1,5 @@
 const async = require('async');
-const dbServices = require('./dbServices');
+const databaseServiceLayer = require('/opt/databaseServiceLayer/index');
 const statisticsDataService = require('./statisticsDataService');
 
 function handler(event, context, doneCallback) {
@@ -11,10 +11,10 @@ function handler(event, context, doneCallback) {
     });
 
     async.waterfall([
-        continuation => dbServices.connectToDatabase(continuation),
+        continuation => databaseServiceLayer.connectToDatabase(continuation),
         continuation => statisticsDataService.getStatistics(continuation)
     ], (err, statistics) => {
-        dbServices.disconnectDb();
+        databaseServiceLayer.disconnectDb();
         doneCallback(err, statistics);
     })
 }
