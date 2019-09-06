@@ -1,34 +1,16 @@
 const sinon = require('sinon');
 
 function dbMocks() {
-    const saintsStatsDbConfigMock = {
-        endpoints: {
-            angularSaintsStatsDb: 'databaseEndpoint'
-        },
-        credentials: {
-            rdsSaintsStatsData: {
-                username: 'username',
-                password: 'password',
-                database: 'database'
-            }
-        }
-    };
-    
-    const dbConnectionMock = {
+    const databaseServiceLayerMock = {
+        connectToDatabase: sinon.spy(function (callback) {
+            callback()
+        }),
         query: sinon.spy(),
-        end: sinon.spy()
-    };
-
-    const mySqlMock = {
-        createConnection: sinon.spy(function() {
-            return dbConnectionMock;
-        })
+        disconnectDb: sinon.spy()
     };
     
     return {
-        saintsStatsDbConfigMock,
-        dbConnectionMock,
-        mySqlMock
+        databaseServiceLayerMock
     }
 }
 

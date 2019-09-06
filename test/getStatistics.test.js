@@ -7,7 +7,7 @@ const dbMocksConstructor = require('./mocks/dbMocks');
 describe('getStatistics Lambda Test', () => {
     let getStatisticsLambda;
     let getStatisticsLambdaCallback;
-    let databaseServiceLayerMock;
+    let dbMocks;
 
     beforeEach(() => {
         mockery.enable({
@@ -18,15 +18,9 @@ describe('getStatistics Lambda Test', () => {
 
         getStatisticsLambdaCallback = sinon.spy();
 
-        databaseServiceLayerMock = {
-            connectToDatabase: sinon.spy(function (callback) {
-                callback()
-            }),
-            query: sinon.spy(),
-            disconnectDb: sinon.spy()
-        };
+        dbMocks = dbMocksConstructor();
 
-        mockery.registerMock('/opt/databaseServiceLayer/index', databaseServiceLayerMock);
+        mockery.registerMock('/opt/databaseServiceLayer/index', dbMocks.databaseServiceLayerMock);
         getStatisticsLambda = require(`${basedir}/index`).handler;
     });
 
@@ -39,7 +33,7 @@ describe('getStatistics Lambda Test', () => {
         it('should create a connection to the database', () => {
             getStatisticsLambda({}, {}, getStatisticsLambdaCallback);
 
-            assert.equal(databaseServiceLayerMock.connectToDatabase.callCount, 1);
+            assert.equal(dbMocks.databaseServiceLayerMock.connectToDatabase.callCount, 1);
         });
     });
 
@@ -54,9 +48,9 @@ describe('getStatistics Lambda Test', () => {
                 'ORDER BY P.Number, SC.Id';
 
             const expectedDbArgs = [];
-            assert.equal(databaseServiceLayerMock.query.callCount, 1);
-            assert.equal(databaseServiceLayerMock.query.args[0][0], expectedDbQueryString);
-            assert.equal(JSON.stringify(databaseServiceLayerMock.query.args[0][1]), JSON.stringify(expectedDbArgs));
+            assert.equal(dbMocks.databaseServiceLayerMock.query.callCount, 1);
+            assert.equal(dbMocks.databaseServiceLayerMock.query.args[0][0], expectedDbQueryString);
+            assert.equal(JSON.stringify(dbMocks.databaseServiceLayerMock.query.args[0][1]), JSON.stringify(expectedDbArgs));
         });
 
         it('should return the stats categories as an array of stats for each player', () => {
@@ -70,7 +64,7 @@ describe('getStatistics Lambda Test', () => {
                 {Number: 2, Name: 'Player2', Abbreviation: 'FC', Value: 5},
                 {Number: 2, Name: 'Player2', Abbreviation: 'CF', Value: 10}
             ];
-            const getStatisticsFromDbCallback = databaseServiceLayerMock.query.args[0][2];
+            const getStatisticsFromDbCallback = dbMocks.databaseServiceLayerMock.query.args[0][2];
             getStatisticsFromDbCallback(null, statisticsFake);
 
             const expectedFormattedStats = [
@@ -91,7 +85,7 @@ describe('getStatistics Lambda Test', () => {
             assert.equal(getStatisticsLambdaCallback.callCount, 1);
             assert.equal(getStatisticsLambdaCallback.args[0][0], null);
             assert.equal(JSON.stringify(getStatisticsLambdaCallback.args[0][1]), JSON.stringify(expectedFormattedStats));
-            assert.equal(databaseServiceLayerMock.disconnectDb.callCount, 1);
+            assert.equal(dbMocks.databaseServiceLayerMock.disconnectDb.callCount, 1);
         });
 
         it('should return an error if the database query fails', () => {
@@ -100,13 +94,13 @@ describe('getStatistics Lambda Test', () => {
             assert.equal(getStatisticsLambdaCallback.callCount, 0);
 
             const dbQueryError = 'this is an error querying the database';
-            const getStatisticsFromDbCallback = databaseServiceLayerMock.query.args[0][2];
+            const getStatisticsFromDbCallback = dbMocks.databaseServiceLayerMock.query.args[0][2];
             getStatisticsFromDbCallback(dbQueryError);
 
             assert.equal(getStatisticsLambdaCallback.callCount, 1);
             assert.equal(getStatisticsLambdaCallback.args[0][0], dbQueryError);
             assert.equal(getStatisticsLambdaCallback.args[0][1], undefined);
-            assert.equal(databaseServiceLayerMock.disconnectDb.callCount, 1);
+            assert.equal(dbMocks.databaseServiceLayerMock.disconnectDb.callCount, 1);
         });
     });
 });

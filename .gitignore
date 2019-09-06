@@ -2,4 +2,3 @@ package-lock.json
 .idea/*
 node_modules
 *.zip
-functions/getStatsCategories/saintsStatsDbConfig.json

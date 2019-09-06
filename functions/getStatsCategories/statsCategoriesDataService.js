@@ -1,11 +1,11 @@
-const dbServices = require('./dbServices');
+const databaseServiceLayer = require('/opt/databaseServiceLayer/index');
 
 function getStatsCategories(callback) {
     const getStatsCategoriesQuery = 'SELECT * FROM StatsCategories ' +
                                     'ORDER BY Id ASC';
     const getStatsCategoriesArgs = [];
 
-    dbServices.query(getStatsCategoriesQuery, getStatsCategoriesArgs, callback);
+    databaseServiceLayer.query(getStatsCategoriesQuery, getStatsCategoriesArgs, callback);
 }
 
 module.exports = {
