@@ -1,4 +1,3 @@
-const async = require('async');
 const databaseServiceLayer = require('/opt/databaseServiceLayer/index');
 const statsCategoriesDataService = require('./statsCategoriesDataService');
 

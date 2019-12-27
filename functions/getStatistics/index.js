@@ -1,6 +1,6 @@
-const async = require('async');
 const databaseServiceLayer = require('/opt/databaseServiceLayer/index');
 const statisticsDataService = require('./statisticsDataService');
+const statisticsFormatter = require('./statisticsFormatter');
 
 function handler(event, context, doneCallback) {
     console.log('Start process\n', JSON.stringify(event));
@@ -15,7 +15,7 @@ function handler(event, context, doneCallback) {
     statisticsDataService.getStatistics()
         .then(statistics => {
             databaseServiceLayer.disconnectDb();
-            doneCallback(null, statistics);
+            doneCallback(null, statisticsFormatter.formatStatisticsForUi(statistics));
         })
         .catch(err => {
             databaseServiceLayer.disconnectDb();
