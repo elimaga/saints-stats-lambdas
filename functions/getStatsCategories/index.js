@@ -11,13 +11,16 @@ function handler(event, context, doneCallback) {
     });
 
     databaseServiceLayer.connectToDatabase();
-    
-    async.waterfall([
-        continuation => statsCategoriesDataService.getStatsCategories(continuation),
-    ], (err, statsCategories) => {
-        databaseServiceLayer.disconnectDb();
-        doneCallback(err, statsCategories);
-    })
+
+    statsCategoriesDataService.getStatsCategories()
+        .then(statsCategories => {
+            databaseServiceLayer.disconnectDb();
+            doneCallback(null, statsCategories);
+        })
+        .catch(err => {
+            databaseServiceLayer.disconnectDb();
+            doneCallback(err);
+        });
 }
 
 module.exports = {
