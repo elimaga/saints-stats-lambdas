@@ -2,12 +2,12 @@ const basedir = '../functions/getStatsCategories';
 const assert = require('assert');
 const mockery = require('mockery');
 const sinon = require('sinon');
-const dbMocksConstructor = require('./mocks/dbMocks');
+const moxandriaFactory = require('moxandria');
 
 describe('getStatsCategories Lambda Test', () => {
     let getStatsCategoriesLambda;
     let getStatsCategoriesLambdaCallback;
-    let dbMocks;
+    let dbServicesLayerMock;
 
     beforeEach(() => {
         mockery.enable({
@@ -16,12 +16,17 @@ describe('getStatsCategories Lambda Test', () => {
             warnOnUnregistered: false
         });
 
-        getStatsCategoriesLambdaCallback = sinon.spy();
+        const config = {
+            cwd: 'test/mocks',
+            mockPaths: ['']
+        }
+        const moxandria = moxandriaFactory(config);
 
-        dbMocks = dbMocksConstructor();
-
-        mockery.registerMock('/opt/databaseServiceLayer/index', dbMocks.databaseServiceLayerMock);
+        dbServicesLayerMock = moxandria.buildMock('dbServicesMoxandria');
+        mockery.registerMock('/opt/databaseServiceLayer/index', dbServicesLayerMock);
         getStatsCategoriesLambda = require(`${basedir}/index`).handler;
+
+        getStatsCategoriesLambdaCallback = sinon.spy();
     });
 
     afterEach(() => {
@@ -31,55 +36,53 @@ describe('getStatsCategories Lambda Test', () => {
 
     describe('connectToDatabase', () => {
         it('should create a connection to the database', () => {
+            dbServicesLayerMock.queryEnqueueData([null, []]);
+
             getStatsCategoriesLambda({}, {}, getStatsCategoriesLambdaCallback);
 
-            assert.equal(dbMocks.databaseServiceLayerMock.connectToDatabase.callCount, 1);
+            assert.equal(dbServicesLayerMock.connectToDatabase.callCount, 1);
         });
     });
 
     describe('getStatsCategories', () => {
         it('should query the database for the stats categories', () => {
+            dbServicesLayerMock.queryEnqueueData([null, []]);
+
             getStatsCategoriesLambda({}, {}, getStatsCategoriesLambdaCallback);
 
             const expectedDbQueryString = 'SELECT * FROM StatsCategories ' +
                                           'ORDER BY Id ASC';
             const expectedDbArgs = [];
-            assert.equal(dbMocks.databaseServiceLayerMock.query.callCount, 1);
-            assert.equal(dbMocks.databaseServiceLayerMock.query.args[0][0], expectedDbQueryString);
-            assert.equal(JSON.stringify(dbMocks.databaseServiceLayerMock.query.args[0][1]), JSON.stringify(expectedDbArgs));
+            assert.equal(dbServicesLayerMock.query.callCount, 1);
+            assert.equal(dbServicesLayerMock.query.args[0][0], expectedDbQueryString);
+            assert.equal(JSON.stringify(dbServicesLayerMock.query.args[0][1]), JSON.stringify(expectedDbArgs));
         });
 
         it('should return the stats categories', () => {
-            getStatsCategoriesLambda({}, {}, getStatsCategoriesLambdaCallback);
-
-            assert.equal(getStatsCategoriesLambdaCallback.callCount, 0);
-
             const statsCategoriesFake = [
                 {Id: 1, Abbreviation: 'FC', CategoryName: 'Fake Category'},
                 {Id: 2, Abbreviation: 'CF', CategoryName: 'Category that is Fake'}
             ];
-            const getStatsCategoriesFromDbCallback = dbMocks.databaseServiceLayerMock.query.args[0][2];
-            getStatsCategoriesFromDbCallback(null, statsCategoriesFake);
+            dbServicesLayerMock.queryEnqueueData([null, statsCategoriesFake]);
+
+            getStatsCategoriesLambda({}, {}, getStatsCategoriesLambdaCallback);
 
             assert.equal(getStatsCategoriesLambdaCallback.callCount, 1);
             assert.equal(getStatsCategoriesLambdaCallback.args[0][0], null);
             assert.equal(getStatsCategoriesLambdaCallback.args[0][1], statsCategoriesFake);
-            assert.equal(dbMocks.databaseServiceLayerMock.disconnectDb.callCount, 1);
+            assert.equal(dbServicesLayerMock.disconnectDb.callCount, 1);
         });
 
         it('should return an error if the database query fails', () => {
-            getStatsCategoriesLambda({}, {}, getStatsCategoriesLambdaCallback);
-
-            assert.equal(getStatsCategoriesLambdaCallback.callCount, 0);
-
             const dbQueryError = 'this is an error querying the database';
-            const getStatsCategoriesFromDbCallback = dbMocks.databaseServiceLayerMock.query.args[0][2];
-            getStatsCategoriesFromDbCallback(dbQueryError);
+            dbServicesLayerMock.queryEnqueueData([dbQueryError]);
+
+            getStatsCategoriesLambda({}, {}, getStatsCategoriesLambdaCallback);
 
             assert.equal(getStatsCategoriesLambdaCallback.callCount, 1);
             assert.equal(getStatsCategoriesLambdaCallback.args[0][0], dbQueryError);
             assert.equal(getStatsCategoriesLambdaCallback.args[0][1], undefined);
-            assert.equal(dbMocks.databaseServiceLayerMock.disconnectDb.callCount, 1);
+            assert.equal(dbServicesLayerMock.disconnectDb.callCount, 1);
         });
     });
 });

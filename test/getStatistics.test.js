@@ -3,13 +3,11 @@ const assert = require('assert');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const moxandriaFactory = require('moxandria');
-const dbMocksConstructor = require('./mocks/dbMocks');
 
 describe('getStatistics Lambda Test', () => {
     let getStatisticsLambda;
     let getStatisticsLambdaCallback;
     let dbServicesLayerMock;
-    let moxandria;
 
     beforeEach(() => {
         mockery.enable({
@@ -18,27 +16,17 @@ describe('getStatistics Lambda Test', () => {
             warnOnUnregistered: false
         });
         
-        moxandria = moxandriaFactory();
-
-        function dbServicesMoxandria (mockApi) {
-            return {
-                connectToDatabase: function (callback) {
-                    callback()
-                },
-                query: function (sql, params, callback) {
-                    const callbackData = mockApi.queryDequeueData();
-                    callback.apply(null, callbackData);
-                },
-                disconnectDb: () => {}
-            }
+        const config = {
+            cwd: 'test/mocks',
+            mockPaths: ['']
         }
+        const moxandria = moxandriaFactory(config);
 
-        getStatisticsLambdaCallback = sinon.spy();
-
-        moxandria.registerMock('databaseServiceLayerMock', dbServicesMoxandria);
-        dbServicesLayerMock = moxandria.buildMock('databaseServiceLayerMock');
+        dbServicesLayerMock = moxandria.buildMock('dbServicesMoxandria');
         mockery.registerMock('/opt/databaseServiceLayer/index', dbServicesLayerMock);
         getStatisticsLambda = require(`${basedir}/index`).handler;
+
+        getStatisticsLambdaCallback = sinon.spy();
     });
 
     afterEach(() => {
@@ -107,7 +95,7 @@ describe('getStatistics Lambda Test', () => {
 
         it('should return an error if the database query fails', () => {
             const dbQueryError = 'this is an error querying the database';
-            dbServicesLayerMock.queryEnqueueData([dbQueryError, null]);
+            dbServicesLayerMock.queryEnqueueData([dbQueryError]);
 
             getStatisticsLambda({}, {}, getStatisticsLambdaCallback);
 
