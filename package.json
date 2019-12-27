@@ -2,20 +2,15 @@
   "name": "saints-stats-lambdas",
   "version": "1.0.0",
   "description": "Project to store all the lambdas for saints-stats.",
-  "main": "",
   "scripts": {
     "test": "mocha ./test/*.test.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/elimaga/saints-stats-lambdas.git"
+    "url": "https://github.com/elimaga/saints-stats-lambdas.git"
   },
   "author": "Eli Magallanes",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/elimaga/saints-stats-lambdas/issues"
-  },
-  "homepage": "https://github.com/elimaga/saints-stats-lambdas#readme",
   "devDependencies": {
     "mocha": "^6.2.0",
     "mockery": "^2.1.0",
