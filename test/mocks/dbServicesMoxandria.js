@@ -1,7 +1,7 @@
 function dbServicesMoxandria (mockApi) {
     return {
         connectToDatabase: () => {},
-        query: function (sql, params) {
+        query: () => {
             const [err, data] = mockApi.queryDequeueData();
             return new Promise((resolve, reject) => {
                 if (err) {
