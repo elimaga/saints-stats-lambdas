@@ -1,12 +1,10 @@
 const basedir = '../functions/getStatistics';
 const assert = require('assert');
 const mockery = require('mockery');
-const sinon = require('sinon');
 const moxandriaFactory = require('moxandria');
 
 describe('getStatistics Lambda Test', () => {
     let getStatisticsLambda;
-    let getStatisticsLambdaCallback;
     let dbServicesLayerMock;
 
     beforeEach(() => {
@@ -15,7 +13,7 @@ describe('getStatistics Lambda Test', () => {
             warnOnReplace: true,
             warnOnUnregistered: false
         });
-        
+
         const config = {
             cwd: 'test/mocks',
             mockPaths: ['']
@@ -25,8 +23,6 @@ describe('getStatistics Lambda Test', () => {
         dbServicesLayerMock = moxandria.buildMock('dbServicesMoxandria');
         mockery.registerMock('/opt/databaseServiceLayer/index', dbServicesLayerMock);
         getStatisticsLambda = require(`${basedir}/index`).handler;
-
-        getStatisticsLambdaCallback = sinon.spy();
     });
 
     afterEach(() => {
@@ -35,44 +31,42 @@ describe('getStatistics Lambda Test', () => {
     });
 
     describe('connectToDatabase', () => {
-        it('should create a connection to the database', () => {
+        it('should create a connection to the database', (done) => {
             dbServicesLayerMock.queryEnqueueData([null, []]);
 
-            getStatisticsLambda({}, {}, getStatisticsLambdaCallback);
-
-            assert.equal(dbServicesLayerMock.connectToDatabase.callCount, 1);
+            getStatisticsLambda({}, {}, () => {
+                assert.equal(dbServicesLayerMock.connectToDatabase.callCount, 1);
+                done();
+            });
         });
     });
 
     describe('getStatistics', () => {
-        it('should query the database for the statistics', () => {
-            dbServicesLayerMock.queryEnqueueData([null, []]);
-
-            getStatisticsLambda({}, {}, getStatisticsLambdaCallback);
-
+        it('should query the database for the statistics', (done) => {
             const expectedDbQueryString = 'SELECT P.Number, P.Name, SC.Abbreviation, S.Value ' +
                 'FROM Statistics S ' +
                 'INNER JOIN Players P on S.PlayerId = P.Id ' +
                 'INNER JOIN StatsCategories SC on S.CategoryId = SC.Id ' +
                 'ORDER BY P.Number, SC.Id';
-
             const expectedDbArgs = [];
-            assert.equal(dbServicesLayerMock.query.callCount, 1);
-            assert.equal(dbServicesLayerMock.query.args[0][0], expectedDbQueryString);
-            assert.equal(JSON.stringify(dbServicesLayerMock.query.args[0][1]), JSON.stringify(expectedDbArgs));
+            dbServicesLayerMock.queryEnqueueData([null, []]);
+
+            getStatisticsLambda({}, {}, () => {
+                assert.equal(dbServicesLayerMock.query.callCount, 1);
+                assert.equal(dbServicesLayerMock.query.args[0][0], expectedDbQueryString);
+                assert.deepEqual(dbServicesLayerMock.query.args[0][1], expectedDbArgs);
+                done();
+            });
+
         });
 
-        it('should return the stats categories as an array of stats for each player', () => {
+        it('should return the stats categories as an array of stats for each player', (done) => {
             const statisticsFake = [
-                {Number: 1, Name: 'Player1', Abbreviation: 'FC', Value: 8},
-                {Number: 1, Name: 'Player1', Abbreviation: 'CF', Value: 6},
-                {Number: 2, Name: 'Player2', Abbreviation: 'FC', Value: 5},
-                {Number: 2, Name: 'Player2', Abbreviation: 'CF', Value: 10}
+                { Number: 1, Name: 'Player1', Abbreviation: 'FC', Value: 8 },
+                { Number: 1, Name: 'Player1', Abbreviation: 'CF', Value: 6 },
+                { Number: 2, Name: 'Player2', Abbreviation: 'FC', Value: 5 },
+                { Number: 2, Name: 'Player2', Abbreviation: 'CF', Value: 10 }
             ];
-            dbServicesLayerMock.queryEnqueueData([null, statisticsFake]);
-
-            getStatisticsLambda({}, {}, getStatisticsLambdaCallback);
-
             const expectedFormattedStats = [
                 {
                     Number: 1,
@@ -87,22 +81,26 @@ describe('getStatistics Lambda Test', () => {
                     CF: 10
                 }
             ];
-            assert.equal(getStatisticsLambdaCallback.callCount, 1);
-            assert.equal(getStatisticsLambdaCallback.args[0][0], null);
-            assert.equal(JSON.stringify(getStatisticsLambdaCallback.args[0][1]), JSON.stringify(expectedFormattedStats));
-            assert.equal(dbServicesLayerMock.disconnectDb.callCount, 1);
+            dbServicesLayerMock.queryEnqueueData([null, statisticsFake]);
+
+            getStatisticsLambda({}, {}, (err, data) => {
+                assert.ifError(err);
+                assert.deepEqual(data, expectedFormattedStats);
+                assert.equal(dbServicesLayerMock.disconnectDb.callCount, 1);
+                done();
+            });
         });
 
-        it('should return an error if the database query fails', () => {
+        it('should return an error if the database query fails', (done) => {
             const dbQueryError = 'this is an error querying the database';
             dbServicesLayerMock.queryEnqueueData([dbQueryError]);
 
-            getStatisticsLambda({}, {}, getStatisticsLambdaCallback);
-
-            assert.equal(getStatisticsLambdaCallback.callCount, 1);
-            assert.equal(getStatisticsLambdaCallback.args[0][0], dbQueryError);
-            assert.equal(getStatisticsLambdaCallback.args[0][1], undefined);
-            assert.equal(dbServicesLayerMock.disconnectDb.callCount, 1);
+            getStatisticsLambda({}, {}, (err, data) => {
+                assert.equal(err, dbQueryError);
+                assert.equal(data, undefined);
+                assert.equal(dbServicesLayerMock.disconnectDb.callCount, 1);
+                done();
+            });
         });
     });
 });
