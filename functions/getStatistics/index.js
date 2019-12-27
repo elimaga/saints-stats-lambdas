@@ -12,12 +12,15 @@ function handler(event, context, doneCallback) {
 
     databaseServiceLayer.connectToDatabase();
 
-    async.waterfall([
-        continuation => statisticsDataService.getStatistics(continuation)
-    ], (err, statistics) => {
-        databaseServiceLayer.disconnectDb();
-        doneCallback(err, statistics);
-    })
+    statisticsDataService.getStatistics()
+        .then(statistics => {
+            databaseServiceLayer.disconnectDb();
+            doneCallback(null, statistics);
+        })
+        .catch(err => {
+            databaseServiceLayer.disconnectDb();
+            doneCallback(err);
+        });
 }
 
 module.exports = {
