@@ -10,8 +10,9 @@ function handler(event, context, doneCallback) {
         doneCallback(err);
     });
 
+    databaseServiceLayer.connectToDatabase();
+
     async.waterfall([
-        continuation => databaseServiceLayer.connectToDatabase(continuation),
         continuation => statisticsDataService.getStatistics(continuation)
     ], (err, statistics) => {
         databaseServiceLayer.disconnectDb();

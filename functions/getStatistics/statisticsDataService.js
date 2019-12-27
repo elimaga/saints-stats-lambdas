@@ -8,29 +8,29 @@ function getStatistics(callback) {
                                'ORDER BY P.Number, SC.Id';
     const getStatisticsArgs = [];
 
-    databaseServiceLayer.query(getStatisticsQuery, getStatisticsArgs, function (err, statistics) {
-        if (err) {
+    databaseServiceLayer.query(getStatisticsQuery, getStatisticsArgs)
+        .then(statistics => {
+            let statsForEachPlayer = [];
+
+            let playerStats = {};
+            statistics.forEach(statistic => {
+                if (statistic.Number === playerStats.Number) {
+                    playerStats[statistic.Abbreviation] = statistic.Value;
+                } else {
+                    playerStats = {};
+                    statsForEachPlayer.push(playerStats);
+                    playerStats.Number = statistic.Number;
+                    playerStats.Name = statistic.Name;
+                    playerStats[statistic.Abbreviation] = statistic.Value;
+                }
+            });
+    
+            callback(null, statsForEachPlayer);
+        })
+        .catch(err => {
             callback(err);
-            return;
-        }
 
-        let statsForEachPlayer = [];
-
-        let playerStats = {};
-        statistics.forEach(statistic => {
-            if (statistic.Number === playerStats.Number) {
-                playerStats[statistic.Abbreviation] = statistic.Value;
-            } else {
-                playerStats = {};
-                statsForEachPlayer.push(playerStats);
-                playerStats.Number = statistic.Number;
-                playerStats.Name = statistic.Name;
-                playerStats[statistic.Abbreviation] = statistic.Value;
-            }
         });
-
-        callback(null, statsForEachPlayer);
-    });
 }
 
 module.exports = {

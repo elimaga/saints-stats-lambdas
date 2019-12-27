@@ -1,11 +1,15 @@
 function dbServicesMoxandria (mockApi) {
     return {
-        connectToDatabase: function (callback) {
-            callback()
-        },
-        query: function (sql, params, callback) {
-            const callbackData = mockApi.queryDequeueData();
-            callback.apply(null, callbackData);
+        connectToDatabase: () => {},
+        query: function (sql, params) {
+            const [err, data] = mockApi.queryDequeueData();
+            return new Promise((resolve, reject) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(data);
+                }
+            });
         },
         disconnectDb: () => {}
     }

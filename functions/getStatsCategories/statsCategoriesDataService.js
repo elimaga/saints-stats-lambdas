@@ -5,7 +5,13 @@ function getStatsCategories(callback) {
                                     'ORDER BY Id ASC';
     const getStatsCategoriesArgs = [];
 
-    databaseServiceLayer.query(getStatsCategoriesQuery, getStatsCategoriesArgs, callback);
+    databaseServiceLayer.query(getStatsCategoriesQuery, getStatsCategoriesArgs)
+        .then(data => {
+            callback(null, data);
+        })
+        .catch(err => {
+            callback(err);
+        });
 }
 
 module.exports = {
