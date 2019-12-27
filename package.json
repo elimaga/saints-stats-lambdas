@@ -19,6 +19,7 @@
   "devDependencies": {
     "mocha": "^6.2.0",
     "mockery": "^2.1.0",
+    "moxandria": "^1.1.2",
     "sinon": "^7.4.1"
   }
 }
