@@ -4,11 +4,7 @@ function dbServicesMoxandria (mockApi) {
         query: () => {
             const [err, data] = mockApi.queryDequeueData();
             return new Promise((resolve, reject) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
+                err ? reject(err) : resolve(data);
             });
         },
         disconnectDb: () => {}

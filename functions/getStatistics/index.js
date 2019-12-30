@@ -2,7 +2,7 @@ const databaseServiceLayer = require('/opt/databaseServiceLayer/index');
 const statisticsDataService = require('./statisticsDataService');
 const statisticsFormatter = require('./statisticsFormatter');
 
-function handler(event, context, doneCallback) {
+async function handler(event, context, doneCallback) {
     console.log('Start process\n', JSON.stringify(event));
 
     process.on('uncaughtException', (err) => {
@@ -12,15 +12,15 @@ function handler(event, context, doneCallback) {
 
     databaseServiceLayer.connectToDatabase();
 
-    statisticsDataService.getStatistics()
-        .then(statistics => {
-            databaseServiceLayer.disconnectDb();
-            doneCallback(null, statisticsFormatter.formatStatisticsForUi(statistics));
-        })
-        .catch(err => {
-            databaseServiceLayer.disconnectDb();
-            doneCallback(err);
-        });
+    try {
+        const statistics = await statisticsDataService.getStatistics();
+        const formattedStats = statisticsFormatter.formatStatisticsForUi(statistics);
+        databaseServiceLayer.disconnectDb();
+        doneCallback(null, formattedStats);
+    } catch (e) {
+        databaseServiceLayer.disconnectDb();
+        doneCallback(e);
+    }
 }
 
 module.exports = {

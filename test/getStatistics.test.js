@@ -60,7 +60,7 @@ describe('getStatistics Lambda Test', () => {
 
         });
 
-        it('should return the stats categories as an array of stats for each player', (done) => {
+        it('should return the stats as an array of stats for each player', (done) => {
             const statisticsFake = [
                 { Number: 1, Name: 'Player1', Abbreviation: 'FC', Value: 8 },
                 { Number: 1, Name: 'Player1', Abbreviation: 'CF', Value: 6 },
