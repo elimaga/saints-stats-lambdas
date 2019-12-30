@@ -1,7 +1,7 @@
 const databaseServiceLayer = require('/opt/databaseServiceLayer/index');
 const statsCategoriesDataService = require('./statsCategoriesDataService');
 
-function handler(event, context, doneCallback) {
+async function handler(event, context, doneCallback) {
     console.log('Start process\n', JSON.stringify(event));
 
     process.on('uncaughtException', (err) => {
@@ -11,15 +11,16 @@ function handler(event, context, doneCallback) {
 
     databaseServiceLayer.connectToDatabase();
 
-    statsCategoriesDataService.getStatsCategories()
-        .then(statsCategories => {
-            databaseServiceLayer.disconnectDb();
-            doneCallback(null, statsCategories);
-        })
-        .catch(err => {
-            databaseServiceLayer.disconnectDb();
-            doneCallback(err);
-        });
+    let handlerErr, statsCategories;
+
+    try {
+        statsCategories = await statsCategoriesDataService.getStatsCategories()
+    } catch (e) {
+        handlerErr = e;
+    }
+
+    databaseServiceLayer.disconnectDb();
+    doneCallback(handlerErr, statsCategories);
 }
 
 module.exports = {

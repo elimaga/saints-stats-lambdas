@@ -12,18 +12,17 @@ async function handler(event, context, doneCallback) {
 
     databaseServiceLayer.connectToDatabase();
 
-    let formattedStats;
-    let error;
+    let handlerErr, formattedStats;
 
     try {
         const statistics = await statisticsDataService.getStatistics();
         formattedStats = statisticsFormatter.formatStatisticsForUi(statistics);
     } catch (e) {
-        error = e;
+        handlerErr = e;
     }
 
     databaseServiceLayer.disconnectDb();
-    doneCallback(error, formattedStats);
+    doneCallback(handlerErr, formattedStats);
 }
 
 module.exports = {
